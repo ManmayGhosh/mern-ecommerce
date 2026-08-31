@@ -4,6 +4,9 @@ A self-contained e-commerce demo store: browse products, register/login, add
 items to a cart, check out, and view order history. Built to run entirely
 inside Docker via `docker compose`.
 
+**[Live demo](https://shopeasy-frontend-jiaq.onrender.com/)**
+---
+
 ## Stack
 
 | Layer     | Tech                                             |
