@@ -4,4 +4,4 @@
 //
 // Example for a Render deployment:
 //   window.__API_BASE__ = "https://shopeasy-backend.onrender.com/api";
-window.__API_BASE__ = "";
+window.__API_BASE__ = "https://shopeasy-backend-pf0y.onrender.com/api";
