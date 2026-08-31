@@ -124,6 +124,65 @@ ecommerce/
   payment provider (e.g. Stripe) inside `routes/orders.js` before marking
   an order as paid if you plan to take real payments.
 
+## Deploying it as a live website (Render)
+
+This deploys as **three separate pieces**, matching how you've deployed
+other projects: a managed Postgres database, the backend as a Docker Web
+Service, and the frontend as a Static Site. The frontend being a static
+site (not a Dockerized nginx service) means there's no `proxy_pass`
+hostname to resolve at all — the browser calls the backend's public URL
+directly, so the nginx/Render network-isolation issues you've hit before
+don't apply here.
+
+### Option A — One-shot with the included Blueprint
+
+1. Push this repo to GitHub.
+2. In the Render dashboard: **New > Blueprint**, point it at the repo. It
+   reads `render.yaml` and creates all three services (`shopeasy-db`,
+   `shopeasy-backend`, `shopeasy-frontend`) in one go, with `JWT_SECRET`
+   auto-generated and `DATABASE_URL` wired to the database automatically.
+3. If the service names are already taken on Render, rename them in
+   `render.yaml` — but if you do, update the two cross-references too:
+   `CORS_ORIGIN` (in the backend service) and the backend URL baked into
+   the frontend's `buildCommand`, since Render URLs are `https://<service-name>.onrender.com`.
+4. First deploy runs `db/init.sql` automatically (via `RUN_MIGRATIONS=true`)
+   since managed Postgres has no `docker-entrypoint-initdb.d` — it's
+   idempotent, so this is safe to leave on.
+
+### Option B — Manual, via the Render dashboard
+
+1. **Database:** New > PostgreSQL. Once created, copy the **Internal
+   Database URL**.
+2. **Backend:** New > Web Service > connect the repo > root directory
+   `backend` > Runtime: Docker. Set env vars:
+   - `DATABASE_URL` — the Internal Database URL from step 1
+   - `DB_SSL` = `true`
+   - `RUN_MIGRATIONS` = `true` (only needed for the first deploy, but
+     harmless to leave on since `init.sql` is idempotent)
+   - `JWT_SECRET` — a long random string
+   - `CORS_ORIGIN` — you'll fill this in after step 3
+   - Do **not** set `PORT` — Render injects its own and `server.js`
+     already reads `process.env.PORT`.
+3. **Frontend:** New > Static Site > same repo > publish directory
+   `frontend/public`. No build command needed — but first edit
+   `frontend/public/js/config.js` and set:
+   ```js
+   window.__API_BASE__ = "https://<your-backend-service>.onrender.com/api";
+   ```
+   then commit and push (Render redeploys on push).
+4. Go back to the backend service and set `CORS_ORIGIN` to your frontend's
+   `https://<your-frontend-service>.onrender.com` URL, then redeploy the
+   backend.
+
+### After deploying
+
+- Visit the frontend URL — it should load products from the backend.
+- If products don't load, check the backend logs for CORS or DB
+  connection errors first; those are the two most common first-deploy
+  issues.
+- Once things are stable, you can drop `RUN_MIGRATIONS` if you don't want
+  the schema re-checked on every boot.
+
 ## Production notes
 
 This is set up for local/self-hosted Docker use. Before exposing it to the

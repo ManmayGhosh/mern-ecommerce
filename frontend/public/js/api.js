@@ -1,7 +1,7 @@
 // Small fetch wrapper for talking to the backend API.
 // Requests are made to /api/... which nginx proxies to the backend container.
 
-const API_BASE = "/api";
+const API_BASE = window.__API_BASE__ || "/api";
 
 function getToken() {
   return localStorage.getItem("token");

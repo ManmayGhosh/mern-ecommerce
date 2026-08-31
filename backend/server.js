@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const { waitForDb } = require("./db");
+const { waitForDb, runMigrationsIfNeeded } = require("./db");
 const authRoutes = require("./routes/auth");
 const productRoutes = require("./routes/products");
 const orderRoutes = require("./routes/orders");
@@ -38,6 +38,7 @@ app.use((err, req, res, next) => {
 
 async function start() {
   await waitForDb();
+  await runMigrationsIfNeeded();
   app.listen(PORT, () => {
     console.log(`Backend API listening on port ${PORT}`);
   });
